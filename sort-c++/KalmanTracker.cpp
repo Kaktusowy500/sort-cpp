@@ -16,7 +16,7 @@ void KalmanTracker::init_kf(StateType stateMat)
 
 	measurement = Mat::zeros(measureNum, 1, CV_32F);
 
-	kf.transitionMatrix = *(Mat_<float>(stateNum, stateNum) <<
+	kf.transitionMatrix = (Mat_<float>(stateNum, stateNum) <<
 		1, 0, 0, 0, 1, 0, 0,
 		0, 1, 0, 0, 0, 1, 0,
 		0, 0, 1, 0, 0, 0, 1,

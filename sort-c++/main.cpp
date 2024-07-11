@@ -25,7 +25,8 @@
 #include <iostream>
 #include <fstream>
 #include <iomanip> // to format image names using setw() and setfill()
-#include <io.h>    // to check file existence using POSIX function access(). On Linux include <unistd.h>.
+// #include <io.h>    // to check file existence using POSIX function access(). On Linux include <unistd.h>.
+#include <unistd.h>
 #include <set>
 
 #include "Hungarian.h"
@@ -97,7 +98,7 @@ void TestSORT(string seqName, bool display)
 	string imgPath = "D:/Data/Track/2DMOT2015/train/" + seqName + "/img1/";
 
 	if (display)
-		if (_access(imgPath.c_str(), 0) == -1)
+		if (access(imgPath.c_str(), 0) == -1)
 		{
 			cerr << "Image path not found!" << endl;
 			display = false;
@@ -361,7 +362,7 @@ void TestSORT(string seqName, bool display)
 			for (auto tb : frameTrackingResult)
 				cv::rectangle(img, tb.box, randColor[tb.id % CNUM], 2, 8, 0);
 			imshow(seqName, img);
-			cvWaitKey(40);
+			cv::waitKey(40);
 		}
 	}
 
