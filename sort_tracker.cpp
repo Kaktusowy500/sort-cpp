@@ -56,8 +56,8 @@ double GetIOU(Rect_<float> bb_test, Rect_<float> bb_gt)
 }
 
 #define CNUM 20
-int total_frames = 0;
-double total_time = 0.0;
+int totalFrames = 0;
+double totalTime = 0.0;
 
 void TestSORT(ObjectDetector &detector, const std::string &videoPath, bool display);
 
@@ -77,8 +77,9 @@ int main(int argc, char **argv)
 
     TestSORT(detector, video_path, true);
 
-    std::cout << "Total Tracking took: " << total_time << " for " << total_frames << " frames or "
-              << ((double)total_frames / (double)total_time) << " FPS" << std::endl;
+    std::cout << "Total Tracking took: " << totalTime << " for " << totalFrames << " frames or "
+              << ((double)totalFrames / (double)totalTime) << " FPS" << std::endl;
+    std::cout << "Last ID: " << KalmanTracker::kf_count << std::endl;
 
     return 0;
 }
@@ -114,20 +115,20 @@ void TestSORT(ObjectDetector &detector, const std::string &videoPath, bool displ
     unsigned int trkNum = 0;
     unsigned int detNum = 0;
 
-    double cycle_time = 0.0;
-    int64 start_time = 0;
+    double cycleTime = 0.0;
+    int64 startTime = 0;
 
     cv::Mat frame;
-    int frame_count = 0;
-    int max_age = 1;
-    int min_hits = 3;
+    int frameCount = 0;
+    int maxAgeWithoutUpdate = 3;
+    int minHits = 3;
     double iouThreshold = 0.3;
 
     while (cap.read(frame))
     {
-        total_frames++;
-        frame_count++;
-        start_time = getTickCount();
+        totalFrames++;
+        frameCount++;
+        startTime = getTickCount();
 
         std::vector<LabeledBox> detections = detector.detect(frame);
 
@@ -148,7 +149,7 @@ void TestSORT(ObjectDetector &detector, const std::string &videoPath, bool displ
 
         for (auto it = trackers.begin(); it != trackers.end();)
         {
-            Rect_<float> pBox = (*it).predict();
+            Rect_<float> pBox = it->predict();
             if (pBox.x >= 0 && pBox.y >= 0)
             {
                 predictedBoxes.push_back(pBox);
@@ -180,9 +181,9 @@ void TestSORT(ObjectDetector &detector, const std::string &videoPath, bool displ
 
         // solve the assignment problem using hungarian algorithm.
         // the resulting assignment is [track(prediction) : detection], with len=preNum
-        HungarianAlgorithm HungAlgo;
+        HungarianAlgorithm hungAlgo;
         assignment.clear();
-        HungAlgo.Solve(iouMatrix, assignment);
+        hungAlgo.Solve(iouMatrix, assignment);
 
         // find matches, unmatched_detections and unmatched_predictions
         unmatchedTrajectories.clear();
@@ -225,7 +226,6 @@ void TestSORT(ObjectDetector &detector, const std::string &videoPath, bool displ
                 matchedPairs.push_back(cv::Point(i, assignment[i]));
             }
         }
-
         ///////////////////////////////////////
         // 3.3. updating trackers
 
@@ -248,14 +248,15 @@ void TestSORT(ObjectDetector &detector, const std::string &videoPath, bool displ
         frameTrackingResult.clear();
         for (auto it = trackers.begin(); it != trackers.end();)
         {
-            // std::cout << "time since update: " << (*it).m_time_since_update << " hits " << (*it).m_hits << " hit streak " << (*it).m_hit_streak << " age " << (*it).m_age << std::endl;
-            if (((*it).m_time_since_update < 1) &&
-                ((*it).m_hit_streak >= min_hits || frame_count <= min_hits))
+            // if(it->m_id == 18)
+                // std::cout << "time since update: " << it->m_time_since_update << " hits " << it->m_hits << " hit streak " << it->m_hit_streak << " age " << it->m_age << std::endl;
+            if ((it->m_time_since_update < 1) &&
+                (it->m_hit_streak >= minHits || frameCount <= minHits))
             {
                 TrackingBox res;
-                res.box = (*it).get_state();
-                res.id = (*it).m_id + 1;
-                res.frame = frame_count;
+                res.box = it->get_state();
+                res.id = it->m_id;
+                res.frame = frameCount;
                 frameTrackingResult.push_back(res);
                 it++;
             }
@@ -265,12 +266,15 @@ void TestSORT(ObjectDetector &detector, const std::string &videoPath, bool displ
             }
 
             // remove dead tracklet
-            if (it != trackers.end() && (*it).m_time_since_update > max_age)
+            if (it != trackers.end() && it->m_time_since_update > maxAgeWithoutUpdate)
+            {
+                // std::cout << "ID "<< it->m_id << " time since update: " << it->m_time_since_update << " hits " << it->m_hits << " hit streak " << it->m_hit_streak << " age " << it->m_age << std::endl;
                 it = trackers.erase(it);
+            }
         }
 
-        cycle_time = (double)(getTickCount() - start_time);
-        total_time += cycle_time / getTickFrequency();
+        cycleTime = (double)(getTickCount() - startTime);
+        totalTime += cycleTime / getTickFrequency();
 
         if (display)
         {
