@@ -29,7 +29,7 @@ private:
     const int img_h = 640;
     const int img_w = 640;
     const float prob_threshold = 0.5f;
-    const float nms_threshold = 0.50f;
+    const float nms_threshold = 0.60f;
     const std::vector<std::string> class_names = {"vehicle"};
     const int num_classes = class_names.size();
     std::vector<float> padding;

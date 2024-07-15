@@ -29,6 +29,8 @@ void KalmanTracker::init_kf(StateType stateMat)
 	setIdentity(kf.processNoiseCov, Scalar::all(1e-2));
 	setIdentity(kf.measurementNoiseCov, Scalar::all(1e-1));
 	setIdentity(kf.errorCovPost, Scalar::all(1));
+	kf.measurementNoiseCov.at<float>(2, 2) = 1.5; //set area noise 
+	kf.measurementNoiseCov.at<float>(3, 3) = 1.5; //set ratio noise 
 	
 	// initialize state vector with bounding box in [cx,cy,s,r] style
 	kf.statePost.at<float>(0, 0) = stateMat.x + stateMat.width / 2;

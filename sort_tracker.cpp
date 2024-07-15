@@ -120,9 +120,11 @@ void TestSORT(ObjectDetector &detector, const std::string &videoPath, bool displ
 
     cv::Mat frame;
     int frameCount = 0;
-    int maxAgeWithoutUpdate = 3;
-    int minHits = 3;
-    double iouThreshold = 0.3;
+    int maxAgeWithoutUpdate = 5;
+    int minHitStreakForVerification = 2;
+    int maxFramesWithoutDetect = 3;
+    double iouThreshold = 0.15;
+    std::vector<LabeledBox> detections;
 
     while (cap.read(frame))
     {
@@ -130,7 +132,8 @@ void TestSORT(ObjectDetector &detector, const std::string &videoPath, bool displ
         frameCount++;
         startTime = getTickCount();
 
-        std::vector<LabeledBox> detections = detector.detect(frame);
+        // if (frameCount % 2 == 0) // Update detector every n frames , TODO might confuse the kalman filter, doesnt make sense to update state
+        detections = detector.detect(frame);
 
         if (trackers.size() == 0)
         {
@@ -248,10 +251,21 @@ void TestSORT(ObjectDetector &detector, const std::string &videoPath, bool displ
         frameTrackingResult.clear();
         for (auto it = trackers.begin(); it != trackers.end();)
         {
-            // if(it->m_id == 18)
-                // std::cout << "time since update: " << it->m_time_since_update << " hits " << it->m_hits << " hit streak " << it->m_hit_streak << " age " << it->m_age << std::endl;
-            if ((it->m_time_since_update < 1) &&
-                (it->m_hit_streak >= minHits || frameCount <= minHits))
+            if(!it->m_verified && it->m_hit_streak >= minHitStreakForVerification)
+            {
+                it->m_verified = true;
+            }
+            if(it->m_id == 0)
+                std::cout << "time since update: " << it->m_time_since_update << " hits " << it->m_hits << " hit streak " << it->m_hit_streak << " age " << it->m_age << std::endl;
+
+            // remove dead tracklet
+            if (it != trackers.end() && it->m_time_since_update > maxAgeWithoutUpdate)
+            {
+                // std::cout << "ID "<< it->m_id << " time since update: " << it->m_time_since_update << " hits " << it->m_hits << " hit streak " << it->m_hit_streak << " age " << it->m_age << std::endl;
+                it = trackers.erase(it);
+            }    
+            else if ((it->m_time_since_update <= maxFramesWithoutDetect) &&
+                (it->m_verified || frameCount <= minHitStreakForVerification))
             {
                 TrackingBox res;
                 res.box = it->get_state();
@@ -265,12 +279,6 @@ void TestSORT(ObjectDetector &detector, const std::string &videoPath, bool displ
                 it++;
             }
 
-            // remove dead tracklet
-            if (it != trackers.end() && it->m_time_since_update > maxAgeWithoutUpdate)
-            {
-                // std::cout << "ID "<< it->m_id << " time since update: " << it->m_time_since_update << " hits " << it->m_hits << " hit streak " << it->m_hit_streak << " age " << it->m_age << std::endl;
-                it = trackers.erase(it);
-            }
         }
 
         cycleTime = (double)(getTickCount() - startTime);
@@ -283,10 +291,10 @@ void TestSORT(ObjectDetector &detector, const std::string &videoPath, bool displ
                 cv::rectangle(frame, tb.box, randColor[tb.id % CNUM], 2, 8, 0);
                 cv::putText(frame, std::to_string(tb.id), cv::Point(tb.box.x, tb.box.y - 10), FONT_HERSHEY_SIMPLEX, 0.75, randColor[tb.id % CNUM], 2);
             }
-            detector.draw_detections(frame, detections);
+            // detector.draw_detections(frame, detections);
             cv::imshow("Tracking", frame);
 
-            if (cv::waitKey(1) >= 0)
+            if (cv::waitKey(50) >= 0)
             {
                 break;
             }

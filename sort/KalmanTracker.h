@@ -56,6 +56,7 @@ public:
 	int m_hit_streak;
 	int m_age;
 	int m_id;
+	bool m_verified = false;
 
 private:
 	void init_kf(StateType stateMat);
