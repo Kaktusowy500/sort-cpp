@@ -9,6 +9,6 @@ add_subdirectory(sort)
 
 
 find_package(OpenCV REQUIRED)
-add_executable(sort_tracker sort_tracker.cpp)
+add_executable(sort_tracker sort_tracker_example.cpp SortTracker.cpp)
 target_link_libraries(sort_tracker PRIVATE detector sort ${OpenCV_LIBS})
 target_include_directories(sort_tracker PRIVATE detector sort ${OpenCV_INCLUDE_DIRS})
