@@ -1,4 +1,4 @@
-#include "SortTracker.h"
+#include "DetectionsTracker.h"
 
 int main(int argc, char **argv)
 {
@@ -12,7 +12,7 @@ int main(int argc, char **argv)
     std::string videoPath = argv[2];
     std::string deviceName = argv[3];
     ObjectDetector detector(modelPath, deviceName);
-    SortTracker detectionsTracker;
+    DetectionsTracker detectionsTracker;
     int totalFrames = 0;
     double totalTime = 0.0;
 

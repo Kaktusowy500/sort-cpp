@@ -1,6 +1,6 @@
-#include "SortTracker.h"
+#include "DetectionsTracker.h"
 
-SortTracker::SortTracker()
+DetectionsTracker::DetectionsTracker()
 {
     // Generate random colors
     RNG rng(0xFFFFFFFF);
@@ -8,7 +8,7 @@ SortTracker::SortTracker()
         rng.fill(randColor[i], RNG::UNIFORM, 0, 256);
 }
 
-void SortTracker::update(cv::Mat &frame, const std::vector<LabeledBox> &detections)
+void DetectionsTracker::update(cv::Mat &frame, const std::vector<LabeledBox> &detections)
 {
     if (trackers.size() == 0)
     {
@@ -123,10 +123,10 @@ void SortTracker::update(cv::Mat &frame, const std::vector<LabeledBox> &detectio
     }
 }
 
-vector<TrackingBox> SortTracker::getTrackingResults(bool predict)
+vector<LabeledBox> DetectionsTracker::getTrackingResults(bool predict)
 {
     frameCount++;
-    vector<TrackingBox> frameTrackingResult;
+    vector<LabeledBox> frameTrackingResult;
     for (auto it = trackers.begin(); it != trackers.end();)
     {
         if (!it->m_verified && it->m_hit_streak >= minHitStreakForVerification)
@@ -144,12 +144,11 @@ vector<TrackingBox> SortTracker::getTrackingResults(bool predict)
         else if ((it->m_time_since_update <= maxFramesWithoutDetect) &&
                  (it->m_verified || frameCount <= minHitStreakForVerification))
         {
-            TrackingBox res;
+            LabeledBox res;
             if (predict)
-                res.box = it->predict();
-            res.box = it->get_state();
+                res.rect = it->predict();
+            res.rect = it->get_state();
             res.id = it->m_id;
-            res.frame = frameCount;
             frameTrackingResult.push_back(res);
             it++;
         }
@@ -161,16 +160,16 @@ vector<TrackingBox> SortTracker::getTrackingResults(bool predict)
     return frameTrackingResult;
 }
 
-void SortTracker::drawTrackingResults(cv::Mat &frame, const vector<TrackingBox> &frameTrackingResult)
+void DetectionsTracker::drawTrackingResults(cv::Mat &frame, const vector<LabeledBox> &frameTrackingResult)
 {
     for (const auto &tb : frameTrackingResult)
     {
-        cv::rectangle(frame, tb.box, randColor[tb.id % colorNum], 2, 8, 0);
-        cv::putText(frame, std::to_string(tb.id), cv::Point(tb.box.x, tb.box.y - 10), FONT_HERSHEY_SIMPLEX, 0.75, randColor[tb.id % colorNum], 2);
+        cv::rectangle(frame, tb.rect, randColor[tb.id % colorNum], 2, 8, 0);
+        cv::putText(frame, std::to_string(tb.id), cv::Point(tb.rect.x, tb.rect.y - 10), FONT_HERSHEY_SIMPLEX, 0.75, randColor[tb.id % colorNum], 2);
     }
 }
 
-double SortTracker::GetIOU(Rect_<float> bb1, Rect_<float> bb2)
+double DetectionsTracker::GetIOU(Rect_<float> bb1, Rect_<float> bb2)
 {
     float in = (bb1 & bb2).area();
     float un = bb1.area() + bb2.area() - in;

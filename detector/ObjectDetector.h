@@ -10,6 +10,7 @@ struct LabeledBox
 {
     cv::Rect_<double> rect;
     int label;
+    int id;
     float prob;
     std::pair<double, double> get_box_center() const
     {

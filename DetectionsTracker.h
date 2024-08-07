@@ -38,21 +38,13 @@
 using namespace std;
 using namespace cv;
 
-typedef struct TrackingBox
-{
-    int frame;
-    int id;
-    Rect_<float> box;
-} TrackingBox;
-
-
-class SortTracker
+class DetectionsTracker
 {
 public:
-    SortTracker();
+    DetectionsTracker();
     void update(cv::Mat &frame, const std::vector<LabeledBox> & detections);
-    vector<TrackingBox> getTrackingResults(bool predict = false);
-    void drawTrackingResults(cv::Mat & frame, const vector<TrackingBox> &frameTrackingResult);
+    vector<LabeledBox> getTrackingResults(bool predict = false);
+    void drawTrackingResults(cv::Mat & frame, const vector<LabeledBox> &frameTrackingResult);
 
 private:
     vector<KalmanTracker> trackers;
